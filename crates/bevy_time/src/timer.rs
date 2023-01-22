@@ -377,7 +377,7 @@ impl Timer {
     /// ```
     #[inline]
     pub fn percent_left(&self) -> f32 {
-        1.0 - self.percent()
+        (1.0 - self.percent()).max(0.0)
     }
 
     /// Returns the remaining time (in seconds). For `CountUp` timers, this
@@ -411,7 +411,9 @@ impl Timer {
     /// ```
     #[inline]
     pub fn remaining(&self) -> Duration {
-        self.duration() - self.elapsed()
+        self.duration()
+            .checked_sub(self.elapsed())
+            .unwrap_or_default()
     }
 
     /// Returns the number of times a repeating timer
