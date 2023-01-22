@@ -140,6 +140,8 @@ impl Timer {
     }
 
     /// Sets the elapsed time of the timer without any other considerations.
+    /// Using this function after the timer has already been ticked might make
+    /// the timer report inaccurate information.
     ///
     /// See also [`Stopwatch::set`](Stopwatch::set).
     ///
@@ -172,7 +174,8 @@ impl Timer {
         self.duration
     }
 
-    /// Sets the duration of the timer.
+    /// Sets the duration of the timer. Using this function after the timer has
+    /// already been ticked might make the timer report inaccurate information.
     ///
     /// # Examples
     /// ```
