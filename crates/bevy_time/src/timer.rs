@@ -462,6 +462,7 @@ mod tests {
         t.tick(Duration::from_secs_f32(0.25));
         assert_eq!(t.elapsed_secs(), 0.25);
         assert_eq!(t.excess_elapsed_secs(), 0.0);
+        assert_eq!(t.remaining_secs(), 9.75);
         assert_eq!(t.duration(), Duration::from_secs_f32(10.0));
         assert!(!t.finished());
         assert!(!t.just_finished());
@@ -473,6 +474,7 @@ mod tests {
         t.pause();
         t.tick(Duration::from_secs_f32(500.0));
         assert_eq!(t.elapsed_secs(), 0.25);
+        assert_eq!(t.remaining_secs(), 9.75);
         assert_eq!(t.duration(), Duration::from_secs_f32(10.0));
         assert!(!t.finished());
         assert!(!t.just_finished());
@@ -485,6 +487,7 @@ mod tests {
         t.tick(Duration::from_secs_f32(500.0));
         assert_eq!(t.elapsed_secs(), 10.0);
         assert_eq!(t.excess_elapsed_secs(), 0.0);
+        assert_eq!(t.remaining_secs(), 0.0);
         assert!(t.finished());
         assert!(t.just_finished());
         assert_eq!(t.times_finished_this_tick(), 1);
@@ -493,6 +496,7 @@ mod tests {
         // Continuing to tick when finished should only change just_finished
         t.tick(Duration::from_secs_f32(1.0));
         assert_eq!(t.elapsed_secs(), 10.0);
+        assert_eq!(t.remaining_secs(), 0.0);
         assert!(t.finished());
         assert!(!t.just_finished());
         assert_eq!(t.times_finished_this_tick(), 0);
@@ -507,6 +511,7 @@ mod tests {
         t.tick(Duration::from_secs_f32(0.75));
         assert_eq!(t.elapsed_secs(), 0.75);
         assert_eq!(t.excess_elapsed_secs(), 0.0);
+        assert_eq!(t.remaining_secs(), 1.25);
         assert_eq!(t.duration(), Duration::from_secs_f32(2.0));
         assert!(!t.finished());
         assert!(!t.just_finished());
@@ -518,6 +523,7 @@ mod tests {
         t.tick(Duration::from_secs_f32(1.5));
         assert_eq!(t.elapsed_secs(), 0.25);
         assert_eq!(t.excess_elapsed_secs(), 0.0);
+        assert_eq!(t.remaining_secs(), 1.75);
         assert!(t.finished());
         assert!(t.just_finished());
         assert_eq!(t.times_finished_this_tick(), 1);
@@ -526,6 +532,8 @@ mod tests {
         // Continuing to tick should turn off both finished & just_finished for repeating timers
         t.tick(Duration::from_secs_f32(1.0));
         assert_eq!(t.elapsed_secs(), 1.25);
+        assert_eq!(t.excess_elapsed_secs(), 0.0);
+        assert_eq!(t.remaining_secs(), 0.75);
         assert!(!t.finished());
         assert!(!t.just_finished());
         assert_eq!(t.times_finished_this_tick(), 0);
@@ -540,6 +548,7 @@ mod tests {
         t.tick(Duration::from_secs_f32(0.75));
         assert_eq!(t.elapsed_secs(), 0.75);
         assert_eq!(t.excess_elapsed_secs(), 0.0);
+        assert_eq!(t.remaining_secs(), 1.25);
         assert_eq!(t.duration(), Duration::from_secs_f32(2.0));
         assert!(!t.finished());
         assert!(!t.just_finished());
@@ -551,6 +560,7 @@ mod tests {
         t.tick(Duration::from_secs_f32(1.5));
         assert_eq!(t.elapsed_secs(), 2.25);
         assert_eq!(t.excess_elapsed_secs(), 0.25);
+        assert_eq!(t.remaining_secs(), 0.0);
         assert!(t.finished());
         assert!(t.just_finished());
         assert_eq!(t.times_finished_this_tick(), 1);
@@ -559,6 +569,8 @@ mod tests {
         // Continuing to tick should turn off just_finished but stay finished
         t.tick(Duration::from_secs_f32(0.5));
         assert_eq!(t.elapsed_secs(), 2.75);
+        assert_eq!(t.excess_elapsed_secs(), 0.75);
+        assert_eq!(t.remaining_secs(), 0.0);
         assert!(t.finished());
         assert!(!t.just_finished());
         assert_eq!(t.times_finished_this_tick(), 0);
