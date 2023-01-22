@@ -82,8 +82,11 @@ impl Timer {
         self.times_finished_this_tick > 0
     }
 
-    /// Returns the time elapsed on the timer. Guaranteed to be between 0.0 and `duration`.
-    /// Will only equal `duration` when the timer is finished and non repeating.
+    /// Returns the time elapsed on the timer. For `Once` timers, this will
+    /// equal the timer's `duration` when the timer is finished. For `Repeating`
+    /// timers, this is guaranteed to be less than the `duration`. For `CountUp`
+    /// timers, this is the _total_ elapsed time, including any excess; see
+    /// [`Timer::excess_elapsed`](Timer::excess_elapsed) for just the excess.
     ///
     /// See also [`Stopwatch::elapsed`](Stopwatch::elapsed).
     ///
@@ -101,10 +104,36 @@ impl Timer {
     }
 
     /// Returns the time elapsed on the timer as an `f32`.
-    /// See also [`Timer::elapsed`](Timer::elapsed).
+    /// See also [`Timer::elapsed`](Timer::elapsed) and [`Timer::excess_elapsed_secs`](Timer::excess_elapsed_secs).
     #[inline]
     pub fn elapsed_secs(&self) -> f32 {
         self.stopwatch.elapsed_secs()
+    }
+
+    /// For `CountUp` timers, returns the time elapsed since the timer finished.
+    /// Always returns 0 for `Once` and `Repeating` timers. See also
+    /// [`Timer::elapsed`](Timer::elapsed).
+    ///
+    /// # Examples
+    /// ```
+    /// # use bevy_time::*;
+    /// use std::time::Duration;
+    /// let mut timer = Timer::from_seconds(1.0, TimerMode::Repeating);
+    /// timer.tick(Duration::from_secs_f32(2.5));
+    /// assert_eq!(timer.excess_elapsed(), Duration::from_secs_f32(1.5));
+    /// ```
+    #[inline]
+    pub fn excess_elapsed(&self) -> Duration {
+        todo!()
+    }
+
+    /// For `CountUp` timers, returns the time elapsed since the timer finished
+    /// as an `f32`. Always returns 0.0 for `Once` and `Repeating` timers. See
+    /// also [`Timer::elapsed_secs`](Timer::elapsed_secs) and
+    /// [`Timer::excess_elapsed`](Timer::excess_elapsed).
+    #[inline]
+    pub fn excess_elapsed_secs(&self) -> f32 {
+        todo!()
     }
 
     /// Sets the elapsed time of the timer without any other considerations.
@@ -316,7 +345,9 @@ impl Timer {
         self.times_finished_this_tick = 0;
     }
 
-    /// Returns the percentage of the timer elapsed time (goes from 0.0 to 1.0).
+    /// Returns the percentage of the timer elapsed time. For `Once` and
+    /// `Repeating` timers, this goes from 0.0 to 1.0; for `CountUp` timers, it
+    /// continues beyond 1.0.
     ///
     /// # Examples
     /// ```
@@ -331,7 +362,9 @@ impl Timer {
         self.elapsed().as_secs_f32() / self.duration().as_secs_f32()
     }
 
-    /// Returns the percentage of the timer remaining time (goes from 1.0 to 0.0).
+    /// Returns the percentage of the timer remaining time (goes from 1.0 to
+    /// 0.0). For `CountUp` timers, this stops at 0.0 when the timer continues
+    /// counting up.
     ///
     /// # Examples
     /// ```
@@ -412,6 +445,8 @@ pub enum TimerMode {
     Once,
     /// Reset when finished.
     Repeating,
+    /// Act like a [`Stopwatch`](Stopwatch) when finished, continuing to count up.
+    CountUp,
 }
 
 #[cfg(test)]
@@ -425,6 +460,7 @@ mod tests {
         // Tick once, check all attributes
         t.tick(Duration::from_secs_f32(0.25));
         assert_eq!(t.elapsed_secs(), 0.25);
+        assert_eq!(t.excess_elapsed_secs(), 0.0);
         assert_eq!(t.duration(), Duration::from_secs_f32(10.0));
         assert!(!t.finished());
         assert!(!t.just_finished());
@@ -447,6 +483,7 @@ mod tests {
         t.unpause();
         t.tick(Duration::from_secs_f32(500.0));
         assert_eq!(t.elapsed_secs(), 10.0);
+        assert_eq!(t.excess_elapsed_secs(), 0.0);
         assert!(t.finished());
         assert!(t.just_finished());
         assert_eq!(t.times_finished_this_tick(), 1);
@@ -468,6 +505,7 @@ mod tests {
         // Tick once, check all attributes
         t.tick(Duration::from_secs_f32(0.75));
         assert_eq!(t.elapsed_secs(), 0.75);
+        assert_eq!(t.excess_elapsed_secs(), 0.0);
         assert_eq!(t.duration(), Duration::from_secs_f32(2.0));
         assert!(!t.finished());
         assert!(!t.just_finished());
@@ -478,6 +516,7 @@ mod tests {
         // Tick past the end and make sure elapsed wraps
         t.tick(Duration::from_secs_f32(1.5));
         assert_eq!(t.elapsed_secs(), 0.25);
+        assert_eq!(t.excess_elapsed_secs(), 0.0);
         assert!(t.finished());
         assert!(t.just_finished());
         assert_eq!(t.times_finished_this_tick(), 1);
@@ -491,6 +530,39 @@ mod tests {
         assert_eq!(t.times_finished_this_tick(), 0);
         assert_eq!(t.percent(), 0.625);
         assert_eq!(t.percent_left(), 0.375);
+    }
+
+    #[test]
+    fn countup_timer() {
+        let mut t = Timer::from_seconds(2.0, TimerMode::CountUp);
+        // Tick once, check all attributes
+        t.tick(Duration::from_secs_f32(0.75));
+        assert_eq!(t.elapsed_secs(), 0.75);
+        assert_eq!(t.excess_elapsed_secs(), 0.0);
+        assert_eq!(t.duration(), Duration::from_secs_f32(2.0));
+        assert!(!t.finished());
+        assert!(!t.just_finished());
+        assert_eq!(t.times_finished_this_tick(), 0);
+        assert_eq!(t.mode(), TimerMode::CountUp);
+        assert_eq!(t.percent(), 0.375);
+        assert_eq!(t.percent_left(), 0.625);
+        // Tick past end; make sure elapsed keeps rolling and excess_elapsed is populated
+        t.tick(Duration::from_secs_f32(1.5));
+        assert_eq!(t.elapsed_secs(), 2.25);
+        assert_eq!(t.excess_elapsed_secs(), 0.25);
+        assert!(t.finished());
+        assert!(t.just_finished());
+        assert_eq!(t.times_finished_this_tick(), 1);
+        assert_eq!(t.percent(), 1.125);
+        assert_eq!(t.percent_left(), 0.0);
+        // Continuing to tick should turn off just_finished but stay finished
+        t.tick(Duration::from_secs_f32(0.5));
+        assert_eq!(t.elapsed_secs(), 2.75);
+        assert!(t.finished());
+        assert!(!t.just_finished());
+        assert_eq!(t.times_finished_this_tick(), 0);
+        assert_eq!(t.percent(), 1.375);
+        assert_eq!(t.percent_left(), 0.0);
     }
 
     #[test]
@@ -561,5 +633,19 @@ mod tests {
         t.tick(Duration::from_secs_f32(5.0));
         assert!(!t.just_finished());
         assert!(!t.finished());
+    }
+
+    #[test]
+    fn paused_countup() {
+        let mut t = Timer::from_seconds(10.0, TimerMode::CountUp);
+
+        t.tick(Duration::from_secs_f32(10.0));
+        assert!(t.just_finished());
+        assert!(t.finished());
+        // A paused count-up timer should change just_finished to false after a tick
+        t.pause();
+        t.tick(Duration::from_secs_f32(5.0));
+        assert!(!t.just_finished());
+        assert!(t.finished());
     }
 }
