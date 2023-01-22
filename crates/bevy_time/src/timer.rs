@@ -347,7 +347,7 @@ impl Timer {
 
     /// Returns the percentage of the timer elapsed time. For `Once` and
     /// `Repeating` timers, this goes from 0.0 to 1.0; for `CountUp` timers, it
-    /// continues beyond 1.0.
+    /// continues beyond 1.0 as the timer counts past its duration.
     ///
     /// # Examples
     /// ```
@@ -364,7 +364,7 @@ impl Timer {
 
     /// Returns the percentage of the timer remaining time (goes from 1.0 to
     /// 0.0). For `CountUp` timers, this stops at 0.0 when the timer continues
-    /// counting up.
+    /// counting past its duration.
     ///
     /// # Examples
     /// ```
@@ -379,7 +379,8 @@ impl Timer {
         1.0 - self.percent()
     }
 
-    /// Returns the remaining time in seconds
+    /// Returns the remaining time (in seconds). For `CountUp` timers, this
+    /// stops at 0.0 when the timer continues counting past its duration.
     ///
     /// # Examples
     /// ```
@@ -396,7 +397,8 @@ impl Timer {
         self.remaining().as_secs_f32()
     }
 
-    /// Returns the remaining time using Duration
+    /// Returns the remaining time (as a Duration). For `CountUp` timers, this
+    /// stops at 0 when the timer continues counting past its duration.
     ///
     /// # Examples
     /// ```
@@ -445,7 +447,8 @@ pub enum TimerMode {
     Once,
     /// Reset when finished.
     Repeating,
-    /// Act like a [`Stopwatch`](Stopwatch) when finished, continuing to count up.
+    /// Act like a [`Stopwatch`](Stopwatch) when finished, continuing to count
+    /// past the timer's `duration`.
     CountUp,
 }
 
