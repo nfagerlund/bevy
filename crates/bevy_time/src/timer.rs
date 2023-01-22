@@ -124,7 +124,7 @@ impl Timer {
     /// ```
     #[inline]
     pub fn excess_elapsed(&self) -> Duration {
-        todo!()
+        Duration::from_secs_f32(0.0)
     }
 
     /// For `CountUp` timers, returns the time elapsed since the timer finished
@@ -133,7 +133,7 @@ impl Timer {
     /// [`Timer::excess_elapsed`](Timer::excess_elapsed).
     #[inline]
     pub fn excess_elapsed_secs(&self) -> f32 {
-        todo!()
+        0.0
     }
 
     /// Sets the elapsed time of the timer without any other considerations.
