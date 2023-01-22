@@ -17,6 +17,7 @@ pub struct Timer {
     duration: Duration,
     mode: TimerMode,
     finished: bool,
+    already_finished: bool,
     times_finished_this_tick: u32,
 }
 
@@ -124,7 +125,9 @@ impl Timer {
     /// ```
     #[inline]
     pub fn excess_elapsed(&self) -> Duration {
-        Duration::from_secs_f32(0.0)
+        self.elapsed()
+            .checked_sub(self.duration())
+            .unwrap_or_default()
     }
 
     /// For `CountUp` timers, returns the time elapsed since the timer finished
@@ -133,7 +136,7 @@ impl Timer {
     /// [`Timer::excess_elapsed`](Timer::excess_elapsed).
     #[inline]
     pub fn excess_elapsed_secs(&self) -> f32 {
-        0.0
+        self.excess_elapsed().as_secs_f32()
     }
 
     /// Sets the elapsed time of the timer without any other considerations.
@@ -243,7 +246,7 @@ impl Timer {
             return self;
         }
 
-        if self.mode != TimerMode::Repeating && self.finished() {
+        if self.mode == TimerMode::Once && self.finished() {
             self.times_finished_this_tick = 0;
             return self;
         }
@@ -252,17 +255,31 @@ impl Timer {
         self.finished = self.elapsed() >= self.duration();
 
         if self.finished() {
-            if self.mode == TimerMode::Repeating {
-                self.times_finished_this_tick =
-                    (self.elapsed().as_nanos() / self.duration().as_nanos()) as u32;
-                // Duration does not have a modulo
-                self.set_elapsed(self.elapsed() - self.duration() * self.times_finished_this_tick);
-            } else {
-                self.times_finished_this_tick = 1;
-                self.set_elapsed(self.duration());
+            match self.mode {
+                TimerMode::Repeating => {
+                    self.times_finished_this_tick =
+                        (self.elapsed().as_nanos() / self.duration().as_nanos()) as u32;
+                    // Duration does not have a modulo
+                    self.set_elapsed(
+                        self.elapsed() - self.duration() * self.times_finished_this_tick,
+                    );
+                }
+                TimerMode::Once => {
+                    self.times_finished_this_tick = 1;
+                    self.set_elapsed(self.duration());
+                }
+                TimerMode::CountUp => {
+                    if !self.already_finished {
+                        self.already_finished = true;
+                        self.times_finished_this_tick = 1;
+                    } else {
+                        self.times_finished_this_tick = 0;
+                    }
+                }
             }
         } else {
             self.times_finished_this_tick = 0;
+            self.already_finished = false;
         }
 
         self
