@@ -119,7 +119,7 @@ impl Timer {
     /// ```
     /// # use bevy_time::*;
     /// use std::time::Duration;
-    /// let mut timer = Timer::from_seconds(1.0, TimerMode::Repeating);
+    /// let mut timer = Timer::from_seconds(1.0, TimerMode::CountUp);
     /// timer.tick(Duration::from_secs_f32(2.5));
     /// assert_eq!(timer.excess_elapsed(), Duration::from_secs_f32(1.5));
     /// ```
