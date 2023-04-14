@@ -4,7 +4,7 @@ use bevy_utils::Duration;
 
 /// Tracks elapsed time. Enters the finished state once `duration` is reached.
 ///
-/// Non repeating timers will stop tracking and stay in the finished state until reset.
+/// One-shot timers will stop tracking and stay in the finished state until reset.
 /// Repeating timers will only be in the finished state on each tick `duration` is reached or
 /// exceeded, and can still be reset at any given point.
 ///
@@ -47,8 +47,16 @@ impl Timer {
         }
     }
 
-    /// Returns `true` if the timer has reached its duration at least once.
-    /// See also [`Timer::just_finished`](Timer::just_finished).
+    /// Returns `true` if the timer has reached its duration.
+    ///
+    /// - For non-repeating timers, this stays true on subsequent ticks unless
+    ///   the timer is reset.
+    /// - For repeating timers, it behaves the same as `just_finished`,
+    ///   returning `false` while the timer counts back up toward its duration
+    ///   again.
+    ///
+    /// See also [`Timer::just_finished`](Timer::just_finished) and
+    /// [`Timer::times_finished_this_tick`](Timer::times_finished_this_tick).
     ///
     /// # Examples
     /// ```
@@ -66,6 +74,9 @@ impl Timer {
     }
 
     /// Returns `true` only on the tick the timer reached its duration.
+    ///
+    /// See also [`Timer::finished`](Timer::finished) and
+    /// [`Timer::times_finished_this_tick`](Timer::times_finished_this_tick).
     ///
     /// # Examples
     /// ```
@@ -108,10 +119,13 @@ impl Timer {
     }
 
     /// Sets the elapsed time of the timer without any other considerations.
+    /// This is not guaranteed to leave the timer in a consistent state, so be
+    /// sure to call [`Timer::tick`](Timer::tick) at least once before checking
+    /// its finished status.
     ///
     /// See also [`Stopwatch::set`](Stopwatch::set).
     ///
-    /// #
+    /// # Examples
     /// ```
     /// # use bevy_time::*;
     /// use std::time::Duration;
@@ -140,7 +154,10 @@ impl Timer {
         self.duration
     }
 
-    /// Sets the duration of the timer.
+    /// Sets the duration of the timer. This is not guaranteed to leave the
+    /// timer in a consistent state, so be sure to call
+    /// [`Timer::tick`](Timer::tick) at least once before checking its finished
+    /// status.
     ///
     /// # Examples
     /// ```
@@ -168,7 +185,11 @@ impl Timer {
         self.mode
     }
 
-    /// Sets the mode of the timer.
+    /// Sets the mode of the timer, and makes some minimal state adjustments to
+    /// avoid re-reporting an already-reported finish. However, this is not
+    /// guaranteed to leave the timer in an overall consistent state, so be sure
+    /// to call [`Timer::tick`](Timer::tick) at least once before checking its
+    /// finished status.
     ///
     /// # Examples
     /// ```
@@ -187,10 +208,11 @@ impl Timer {
         self.mode = mode;
     }
 
-    /// Advance the timer by `delta` seconds.
-    /// Non repeating timer will clamp at duration.
-    /// Repeating timer will wrap around.
-    /// Will not affect paused timers.
+    /// Advance the timer by the provided `delta` Duration, unless the timer is
+    /// paused.
+    ///
+    /// - One-shot timers will clamp at their duration.
+    /// - Repeating timers will wrap around.
     ///
     /// See also [`Stopwatch::tick`](Stopwatch::tick).
     ///
@@ -239,7 +261,8 @@ impl Timer {
         self
     }
 
-    /// Pauses the Timer. Disables the ticking of the timer.
+    /// Pauses the Timer. Ticking the timer while paused will not advance its
+    /// elapsed time.
     ///
     /// See also [`Stopwatch::pause`](Stopwatch::pause).
     ///
@@ -257,7 +280,7 @@ impl Timer {
         self.stopwatch.pause();
     }
 
-    /// Unpauses the Timer. Resumes the ticking of the timer.
+    /// Unpauses the Timer, so that ticking it will advance its elapsed time.
     ///
     /// See also [`Stopwatch::unpause()`](Stopwatch::unpause).
     ///
@@ -347,7 +370,7 @@ impl Timer {
         1.0 - self.percent()
     }
 
-    /// Returns the remaining time in seconds
+    /// Returns the remaining time in seconds.
     ///
     /// # Examples
     /// ```
@@ -364,7 +387,7 @@ impl Timer {
         self.remaining().as_secs_f32()
     }
 
-    /// Returns the remaining time using Duration
+    /// Returns the remaining time as a Duration.
     ///
     /// # Examples
     /// ```
@@ -379,11 +402,13 @@ impl Timer {
         self.duration() - self.elapsed()
     }
 
-    /// Returns the number of times a repeating timer
-    /// finished during the last [`tick`](Timer<T>::tick) call.
+    /// Returns the number of times a repeating timer finished during the last
+    /// [`tick`](Timer::tick) call.
     ///
-    /// For non repeating-timers, this method will only ever
-    /// return 0 or 1.
+    /// For non repeating-timers, this method will only ever return 0 or 1.
+    ///
+    /// See also [`Timer::finished`](Timer::finished) and
+    /// [`Timer::just_finished`](Timer::just_finished).
     ///
     /// # Examples
     /// ```
