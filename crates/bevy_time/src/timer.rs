@@ -595,4 +595,63 @@ mod tests {
         assert!(!t.just_finished());
         assert!(!t.finished());
     }
+
+    #[test]
+    fn set_elapsed() {
+        // The rules for set_elapsed:
+        // 1. Timer state is allowed to be arbitrarily inconsistent until the
+        //    next tick, so we don't test that.
+        // 2. After the next zero-length tick:
+        // - If the timer wasn't finished before but the new elapsed is >= the
+        //   duration, the timer will be just_finished.
+        // - If the timer was finished before and the new elapsed is >= the
+        //   duration, the timer will be finished but not just_finished.
+        // - If the timer was finished before and the new elapsed is < the
+        //   duration, the timer will no longer be finished.
+
+        // -- TimerMode::Once --
+        let mut t = Timer::from_seconds(2.0, TimerMode::Once);
+        // Overflowing the duration: just_finished.
+        t.set_elapsed(Duration::from_secs_f32(5.0));
+        t.tick(Duration::default());
+        assert!(t.finished());
+        assert!(t.just_finished());
+        assert_eq!(t.elapsed(), t.duration());
+        // Overflowing the duration again: finished but not just_finished.
+        t.set_elapsed(Duration::from_secs_f32(5.0));
+        t.tick(Duration::default());
+        assert!(t.finished());
+        assert!(!t.just_finished());
+        // FAILS:
+        assert_eq!(t.elapsed(), t.duration());
+        // Setting under duration: timer not finished (even though it was finished before).
+        t.set_elapsed(Duration::from_secs_f32(1.5));
+        t.tick(Duration::default());
+        // FAILS:
+        assert!(!t.finished());
+        assert!(!t.just_finished());
+
+        // -- TimerMode::Repeating --
+        let mut t = Timer::from_seconds(2.0, TimerMode::Repeating);
+        // Overflowing the duration: finished multiple times this tick.
+        t.set_elapsed(Duration::from_secs_f32(5.0));
+        t.tick(Duration::default());
+        assert!(t.finished());
+        assert!(t.just_finished());
+        assert_eq!(t.times_finished_this_tick(), 2);
+        assert_eq!(t.elapsed_secs(), 1.0);
+        // Overflowing the duration again: finished multiple times this tick.
+        t.set_elapsed(Duration::from_secs_f32(6.0));
+        t.tick(Duration::default());
+        assert!(t.finished());
+        assert!(t.just_finished());
+        assert_eq!(t.times_finished_this_tick(), 3);
+        assert_eq!(t.elapsed_secs(), 0.0);
+        // ^^ not 1.0 (as tick(5), tick(6) would be)
+        // Setting under duration: timer not finished.
+        t.set_elapsed(Duration::from_secs_f32(1.5));
+        t.tick(Duration::default());
+        assert!(!t.finished());
+        assert!(!t.just_finished());
+    }
 }
