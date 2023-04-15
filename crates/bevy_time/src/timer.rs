@@ -654,4 +654,55 @@ mod tests {
         assert!(!t.finished());
         assert!(!t.just_finished());
     }
+
+    #[test]
+    fn set_duration() {
+        // The rules for set_duration:
+        // 1. Timer state is allowed to be arbitrarily inconsistent until the
+        //    next tick, so we don't test that.
+        // 2. After the next zero-length tick, there are three corrections that
+        //    might happen:
+        //
+        // a. Duration was longer than elapsed, but shrank to be less: timer
+        //    acts like it just ticked over the duration.
+        // b. Duration was exact same as elapsed, but shrank to be less: timer
+        //    continues to act like it had already ticked over duration on some
+        //    prior tick. (This situation is not possible for repeating timers,
+        //    since they wrap to zero immediately upon reaching their duration.)
+        // c. Duration was exact same as elapsed, but grew to be longer: timer
+        //    acts like it has never ticked over duration. (This situation is
+        //    not possible for repeating timers.)
+
+        // -- TimerMode::Once --
+        let mut t = Timer::from_seconds(4.0, TimerMode::Once);
+        t.tick(Duration::from_secs_f32(2.5));
+        // Set duration from over to under elapsed: just finished.
+        t.set_duration(Duration::from_secs_f32(2.0));
+        t.tick(Duration::default());
+        assert!(t.finished());
+        assert!(t.just_finished());
+        assert_eq!(t.elapsed(), t.duration());
+        // Set duration from same to under elapsed: previously finished.
+        t.set_duration(Duration::from_secs_f32(1.5));
+        t.tick(Duration::default());
+        assert!(t.finished());
+        assert!(!t.just_finished());
+        // FAILS:
+        assert_eq!(t.elapsed(), t.duration());
+        // Set duration from same to over elapsed: not finished.
+        t.set_duration(Duration::from_secs_f32(4.0));
+        t.tick(Duration::default());
+        // FAILS
+        assert!(!t.finished());
+
+        // -- TimerMode::Repeating --
+        let mut t = Timer::from_seconds(4.0, TimerMode::Repeating);
+        t.tick(Duration::from_secs_f32(2.75));
+        // Set duration from over to under elapsed: just finished, however many times.
+        t.set_duration(Duration::from_secs_f32(0.5));
+        t.tick(Duration::default());
+        assert!(t.finished());
+        assert_eq!(t.times_finished_this_tick(), 5);
+        assert_eq!(t.elapsed_secs(), 0.25);
+    }
 }
