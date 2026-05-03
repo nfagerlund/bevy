@@ -9,7 +9,7 @@ pub fn new_tracy_gpu_context(
     adapter_info: &RenderAdapterInfo,
     device: &RenderDevice,
     queue: &RenderQueue,
-) -> GpuContext {
+) -> Option<GpuContext> {
     let tracy_gpu_backend = match adapter_info.backend {
         Backend::Vulkan => GpuContextType::Vulkan,
         Backend::Dx12 => GpuContextType::Direct3D12,
@@ -17,7 +17,7 @@ pub fn new_tracy_gpu_context(
         Backend::Metal | Backend::BrowserWebGpu | Backend::Noop => GpuContextType::Invalid,
     };
 
-    let tracy_client = Client::running().unwrap();
+    let tracy_client = Client::running()?;
     tracy_client
         .new_gpu_context(
             Some("RenderQueue"),
@@ -25,7 +25,7 @@ pub fn new_tracy_gpu_context(
             initial_timestamp(device, queue),
             queue.get_timestamp_period(),
         )
-        .unwrap()
+        .ok()
 }
 
 // Code copied from https://github.com/Wumpf/wgpu-profiler/blob/f9de342a62cb75f50904a98d11dd2bbeb40ceab8/src/tracy.rs
