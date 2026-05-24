@@ -519,6 +519,18 @@ pub(crate) fn changed_windows(
                 winit_window.set_visible(window.visible);
             }
 
+            #[cfg(target_os = "macos")]
+            {
+                use winit::platform::macos::WindowExtMacOS;
+
+                if window.has_shadow != cache.has_shadow {
+                    winit_window.set_has_shadow(window.has_shadow);
+                }
+                if window.borderless_game != cache.borderless_game {
+                    winit_window.set_borderless_game(window.borderless_game);
+                }
+            }
+
             #[cfg(target_os = "ios")]
             {
                 if window.recognize_pinch_gesture != cache.recognize_pinch_gesture {

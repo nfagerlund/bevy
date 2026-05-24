@@ -147,6 +147,7 @@ impl WinitWindows {
             use winit::platform::macos::WindowAttributesExtMacOS;
             winit_window_attributes = winit_window_attributes
                 .with_movable_by_window_background(window.movable_by_window_background)
+                .with_borderless_game(window.borderless_game)
                 .with_fullsize_content_view(window.fullsize_content_view)
                 .with_has_shadow(window.has_shadow)
                 .with_titlebar_hidden(!window.titlebar_shown)

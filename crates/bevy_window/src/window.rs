@@ -359,6 +359,7 @@ pub struct Window {
     /// - Only used on iOS.
     pub recognize_pan_gesture: Option<(u8, u8)>,
     /// Enables click-and-drag behavior for the entire window, not just the titlebar.
+    /// **Cannot be changed after window creation.**
     ///
     /// Corresponds to [`WindowAttributesExtMacOS::with_movable_by_window_background`].
     ///
@@ -368,7 +369,19 @@ pub struct Window {
     ///
     /// [`WindowAttributesExtMacOS::with_movable_by_window_background`]: https://docs.rs/winit/latest/x86_64-apple-darwin/winit/platform/macos/trait.WindowAttributesExtMacOS.html#tymethod.with_movable_by_window_background
     pub movable_by_window_background: bool,
+    /// Disables the menu bar and dock when in borderless fullscreen mode, for game-like fullscreen
+    /// behavior rather than app-like fullscreen.
+    ///
+    /// Corresponds to [`WindowAttributesExtMacOS::with_borderless_game`].
+    ///
+    /// # Platform-specific
+    ///
+    /// - Only used on macOS.
+    ///
+    /// [`WindowAttributesExtMacOS::with_borderless_game`]: https://docs.rs/winit/latest/x86_64-apple-darwin/winit/platform/macos/trait.WindowAttributesExtMacOS.html#tymethod.with_borderless_game
+    pub borderless_game: bool,
     /// Makes the window content appear behind the titlebar.
+    /// **Cannot be changed after window creation.**
     ///
     /// Corresponds to [`WindowAttributesExtMacOS::with_fullsize_content_view`].
     ///
@@ -393,6 +406,7 @@ pub struct Window {
     /// [`WindowAttributesExtMacOS::with_has_shadow`]: https://docs.rs/winit/latest/x86_64-apple-darwin/winit/platform/macos/trait.WindowAttributesExtMacOS.html#tymethod.with_has_shadow
     pub has_shadow: bool,
     /// Toggles drawing the titlebar.
+    /// **Cannot be changed after window creation.**
     ///
     /// Corresponds to [`WindowAttributesExtMacOS::with_titlebar_hidden`].
     ///
@@ -403,6 +417,7 @@ pub struct Window {
     /// [`WindowAttributesExtMacOS::with_titlebar_hidden`]: https://docs.rs/winit/latest/x86_64-apple-darwin/winit/platform/macos/trait.WindowAttributesExtMacOS.html#tymethod.with_titlebar_hidden
     pub titlebar_shown: bool,
     /// Makes the titlebar transparent, allowing the app content to appear behind it.
+    /// **Cannot be changed after window creation.**
     ///
     /// Corresponds to [`WindowAttributesExtMacOS::with_titlebar_transparent`].
     ///
@@ -413,6 +428,7 @@ pub struct Window {
     /// [`WindowAttributesExtMacOS::with_titlebar_transparent`]: https://docs.rs/winit/latest/x86_64-apple-darwin/winit/platform/macos/trait.WindowAttributesExtMacOS.html#tymethod.with_titlebar_transparent
     pub titlebar_transparent: bool,
     /// Toggles showing the window title.
+    /// **Cannot be changed after window creation.**
     ///
     /// Corresponds to [`WindowAttributesExtMacOS::with_title_hidden`].
     ///
@@ -423,6 +439,7 @@ pub struct Window {
     /// [`WindowAttributesExtMacOS::with_title_hidden`]: https://docs.rs/winit/latest/x86_64-apple-darwin/winit/platform/macos/trait.WindowAttributesExtMacOS.html#tymethod.with_title_hidden
     pub titlebar_show_title: bool,
     /// Toggles showing the traffic light window buttons.
+    /// **Cannot be changed after window creation.**
     ///
     /// Corresponds to [`WindowAttributesExtMacOS::with_titlebar_buttons_hidden`].
     ///
@@ -498,6 +515,7 @@ impl Default for Window {
             recognize_doubletap_gesture: false,
             recognize_pan_gesture: None,
             movable_by_window_background: false,
+            borderless_game: false,
             fullsize_content_view: false,
             has_shadow: true,
             titlebar_shown: true,
