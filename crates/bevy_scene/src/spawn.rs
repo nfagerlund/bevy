@@ -585,6 +585,15 @@ pub trait EntityCommandsSceneExt {
         scenes: impl SceneList,
     ) -> &mut Self;
 
+    /// Spawns a [`SceneList`], where each entity is related to the current entity using [`RelationshipTarget::Relationship`]. This will resolve the scene list (using [`SceneList::resolve_list`]). If that fails (for example, if there are dependencies that have not been
+    /// loaded yet), it will log a [`SpawnSceneError`] as an error. If resolving the [`SceneList`] is successful, the scene list will be spawned.
+    ///
+    /// See [`Scene`] for the features of the scene system (and how to use it).
+    ///
+    /// If your scene list has a dependency that might not be loaded yet (for example, it includes a `.bsn` asset file), consider using [`EntityCommandsSceneExt::queue_spawn_related_scenes`].
+    /// Note that the `.bsn` file format is not yet released.
+    fn spawn_related_scenes<T: RelationshipTarget>(&mut self, scenes: impl SceneList) -> &mut Self;
+
     /// Applies the given [`Scene`] to the current entity as soon as [`Commands`] are applied. This will resolve the Scene (using [`Scene::resolve`]). If that fails (for example, if there are dependencies that have not been
     /// loaded yet), it will log a [`SpawnSceneError`] as an error. If resolving the [`Scene`] is successful, the scene will be spawned.
     ///
@@ -616,6 +625,11 @@ impl EntityCommandsSceneExt for EntityCommands<'_> {
         self.queue(move |entity: EntityWorldMut| {
             entity.queue_spawn_related_scenes::<T>(scenes);
         });
+        self
+    }
+
+    fn spawn_related_scenes<T: RelationshipTarget>(&mut self, scenes: impl SceneList) -> &mut Self {
+        self.queue(move |mut entity: EntityWorldMut| entity.spawn_related_scenes::<T>(scenes));
         self
     }
 
